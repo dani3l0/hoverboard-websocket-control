@@ -14,20 +14,26 @@ let rssiData = {
 	rssi: -100,
 	clients: 0,
 }
+let watchdogMsec = 0
 
 // Websocket connection
-let socket = new WebSocket(`ws://${host}/ws`)
-socket.binaryType = "arraybuffer"
-socket.addEventListener("message", e => {
-	data = new Int16Array(e.data)
-	incomingData.cmd1 = data[1]
-	incomingData.cmd2 = data[2]
-	incomingData.speedR = data[3]
-	incomingData.speedL = data[4]
-	incomingData.batV = data[5]
-	incomingData.temp = data[6]
-	console.log(data)
-})
+let socket
+const initSocket = () => {
+	socket = new WebSocket(`ws://${host}/ws`)
+	socket.binaryType = "arraybuffer"
+	socket.addEventListener("message", e => {
+		data = new Int16Array(e.data)
+		incomingData.cmd1 = data[1]
+		incomingData.cmd2 = data[2]
+		incomingData.speedR = data[3]
+		incomingData.speedL = data[4]
+		incomingData.batV = data[5]
+		incomingData.temp = data[6]
+		watchdogMsec = 0
+	})
+}
+initSocket()
+
 const sendControls = () => {
 	let data = new Uint16Array([0xABCD, steer, speed])
 	let xorChecksum = data.reduce((accumulator, current) => accumulator ^ current, 0)
@@ -37,16 +43,20 @@ const sendControls = () => {
 
 
 // Websocket RSSI connection
-let rssi = new WebSocket(`ws://${host}/rssi`)
-rssi.addEventListener("message", e => {
-	let arr = e.data.split(",")
-	rssiData.rssi = Number(arr[0])
-	rssiData.clients = Number(arr[1])
-})
-rssi.addEventListener("close", e => {
-	rssiData.rssi = -100
-	rssiData.clients = 0
-})
+let rssi
+const initRssi = () => {
+rssi = new WebSocket(`ws://${host}/rssi`)
+	rssi.addEventListener("message", e => {
+		let arr = e.data.split(",")
+		rssiData.rssi = Number(arr[0])
+		rssiData.clients = Number(arr[1])
+	})
+	rssi.addEventListener("close", e => {
+		rssiData.rssi = -100
+		rssiData.clients = 0
+	})
+}
+initRssi()
 
 
 // Joystick controls
@@ -147,12 +157,17 @@ setInterval(() => {
 
 // Slower loop
 setInterval(() => {
-	document.getElementById("connection-status").innerText = `[${rssiData.clients}] ${socket.readyState == socket.OPEN ? "Connected" : "Disconnected"}`
+	let connected = socket.readyState == socket.OPEN
+	let string = "Disconnected"
+	if (connected) string = "Connected"
+	else if (watchdogMsec < 0) string = "Retrying..."
+	else string = "Connecting..."
+	document.getElementById("connection-status").innerText = `[${rssiData.clients}] ${string}`
 
 	let rs = rssiData.rssi
 	let prssi = document.getElementById("progress-rssi")
 	prssi.setAttribute("style", `--value: ${progress(-95, -50, rs)}%`)
-	classWarn(prssi, "warn", -84, 1, rs)
+	classWarn(prssi, "warn", -83, 1, rs)
 	classWarn(prssi, "crit", -90, 1, rs)
 	document.getElementById("stat-rssi").innerText = `${rs} dBM`
 
@@ -170,3 +185,16 @@ setInterval(() => {
 	classWarn(pbattery, "crit", 35, 50, batt)
 	document.getElementById("stat-battery").innerText = `${(batt).toFixed(1)} V`
 }, 250)
+
+
+// Websocket connection watchdog
+setInterval(() => {
+	if (watchdogMsec > 5000) {
+		socket.close()
+		rssi.close()
+		initSocket()
+		initRssi()
+		watchdogMsec = -2500
+	}
+	watchdogMsec += 100
+}, 100)
