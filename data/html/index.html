@@ -8,12 +8,50 @@
 </head>
 
 <body>
+	<div class="gauges">
+		<div class="gauges-big">
+			<canvas id="gauge-speed"></canvas>
+			<div id="rpm"></div>
+		</div>
+		<div class="gauges-small">
+			<div class="statbox">
+				<div class="top">
+					<div class="progress" id="progress-battery"></div>
+				</div>
+				<div class="bottom">
+					<div class="title">Battery</div>
+					<div class="stat" id="stat-battery">N/A</div>
+				</div>
+			</div>
+			<div class="statbox">
+				<div class="top">
+					<div class="progress" id="progress-temp"></div>
+				</div>
+				<div class="bottom">
+					<div class="title">Temperature</div>
+					<div class="stat" id="stat-temp">N/A</div>
+				</div>
+			</div>
+			<div class="statbox">
+				<div class="top">
+					<div class="progress" id="progress-rssi"></div>
+				</div>
+				<div class="bottom">
+					<div class="title">Wi-Fi</div>
+					<div class="stat" id="stat-rssi">N/A</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
 	<div class="joystick">
 		<div id="joystick-base">
 			<div id="joystick-handle"></div>
 		</div>
+		<div id="connection-status">N/A</div>
 	</div>
 </body>
 
+<script src="gauge.min.js"></script>
 <script src="script.js"></script>
 </html>

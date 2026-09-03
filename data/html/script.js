@@ -8,13 +8,16 @@ let incomingData = {
 	batV: 0,
 	temp: 0,
 }
+// const host = window.location.host
+const host = "192.168.1.243"
+let rssiData = {
+	rssi: -100,
+	clients: 0,
+}
 
 // Websocket connection
-const socket = new WebSocket(`ws://${window.location.host}/ws`)
+let socket = new WebSocket(`ws://${host}/ws`)
 socket.binaryType = "arraybuffer"
-socket.addEventListener("open", e => {
-	console.log("CONNECTED")
-})
 socket.addEventListener("message", e => {
 	data = new Int16Array(e.data)
 	incomingData.cmd1 = data[1]
@@ -31,9 +34,20 @@ const sendControls = () => {
 	let data2 = new Uint16Array([0xABCD, steer, speed, xorChecksum])
 	if (socket.readyState == socket.OPEN) socket.send(data2)
 }
-setInterval(() => {
-	sendControls()
-}, 25)
+
+
+// Websocket RSSI connection
+let rssi = new WebSocket(`ws://${host}/rssi`)
+rssi.addEventListener("message", e => {
+	let arr = e.data.split(",")
+	rssiData.rssi = Number(arr[0])
+	rssiData.clients = Number(arr[1])
+})
+rssi.addEventListener("close", e => {
+	rssiData.rssi = -100
+	rssiData.clients = 0
+})
+
 
 // Joystick controls
 const initJoystick = () => {
@@ -80,3 +94,79 @@ const initJoystick = () => {
 }
 
 initJoystick()
+
+
+// Gauges
+const labels = [0, 100, 200, 300, 400, 500, 600, 700, 800, 900]
+let gaugeSpeed = new Gauge(document.getElementById("gauge-speed")).setOptions({
+	angle: -0.2, // The span of the gauge arc
+	lineWidth: 0.02, // The line thickness
+	radiusScale: 1, // Relative radius
+	pointer: {
+	  length: 0.5, // // Relative to gauge radius
+	  strokeWidth: 0.025, // The thickness
+	  color: '#F64' // Fill color
+	},
+	limitMax: true,     // If false, max value increases automatically if value > maxValue
+	limitMin: true,     // If true, the min value of the gauge will be fixed
+	colorStart: '#EEE',   // Colors
+	colorStop: '#EEE',    // just experiment with them
+	strokeColor: '#444',  // to see which ones work best for you
+	generateGradient: true,
+	highDpiSupport: true,     // High resolution support
+	staticLabels: {
+		font: "14px sans-serif",  // Specifies font
+		labels: labels,  // Print labels at these values
+		color: "#888",  // Optional: Label text color
+		fractionDigits: 0  // Optional: Numerical precision. 0=round off.
+	},
+})
+gaugeSpeed.maxValue = labels[labels.length - 1]
+gaugeSpeed.minValue = 0
+gaugeSpeed.animationSpeed = 32
+
+
+
+const progress = (min, max, value) => {
+	let pp = ((value - min) / (max - min)) * 100
+	return Math.max(0, Math.min(pp, 100))
+}
+const classWarn = (dom, className, lowThreshold, highThreshold, value) => {
+	if (lowThreshold >= value || value >= highThreshold) dom.classList.add(className)
+	else dom.classList.remove(className)
+}
+
+
+// Loop
+setInterval(() => {
+	let spd = (incomingData.speedL + incomingData.speedR) / 2
+	gaugeSpeed.set(spd)
+	document.getElementById("rpm").innerText = spd
+	sendControls()
+}, 25)
+
+// Slower loop
+setInterval(() => {
+	document.getElementById("connection-status").innerText = `[${rssiData.clients}] ${socket.readyState == socket.OPEN ? "Connected" : "Disconnected"}`
+
+	let rs = rssiData.rssi
+	let prssi = document.getElementById("progress-rssi")
+	prssi.setAttribute("style", `--value: ${progress(-95, -50, rs)}%`)
+	classWarn(prssi, "warn", -84, 1, rs)
+	classWarn(prssi, "crit", -90, 1, rs)
+	document.getElementById("stat-rssi").innerText = `${rs} dBM`
+
+	let temperatur = incomingData.temp / 10
+	let ptemp = document.getElementById("progress-temp")
+	ptemp.setAttribute("style", `--value: ${progress(30, 60, temperatur)}%`)
+	classWarn(ptemp, "warn", -1000, 52.5, temperatur)
+	classWarn(ptemp, "crit", -1000, 56, temperatur)
+	document.getElementById("stat-temp").innerText = `${temperatur} °C`
+
+	let batt = incomingData.batV / 100
+	let pbattery = document.getElementById("progress-battery")
+	pbattery.setAttribute("style", `--value: ${progress(34, 41, batt)}%`)
+	classWarn(pbattery, "warn", 37, 45, batt)
+	classWarn(pbattery, "crit", 35, 50, batt)
+	document.getElementById("stat-battery").innerText = `${(batt).toFixed(1)} V`
+}, 250)

@@ -1,11 +1,21 @@
 body {
 	margin: 0;
 	background: #222;
-	font-family: sans-serif;
+	font-family: monospace;
 	user-select: none;
-	overflow: hidden;
+	color: #DDD;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	max-width: 960px;
+	margin: 0 auto;
 }
 
+.joystick {
+	margin-top: 48px;
+	width: 360px;
+	margin: 0 auto;
+}
 #joystick-base {
 	width: 200px;
 	height: 200px;
@@ -14,12 +24,11 @@ body {
 	position: relative;
 	touch-action: none;
 	margin: 24px auto;
-	border: 4px solid #555;
+	border: 4px solid #444;
 }
-
 #joystick-handle {
-	width: 64px;
-	height: 64px;
+	width: 48px;
+	height: 48px;
 	background: #F52;
 	border-radius: 50%;
 	pointer-events: none;
@@ -29,9 +38,89 @@ body {
 	transform: translate(-50%, -50%);
 	cursor: pointer;
 }
-
 #joystick-log, #debug {
 	font-family: monospace;
 	color: #0FF;
 	text-align: center;
+}
+
+.gauges {
+	width: 360px;
+	margin: 0 auto;
+	text-align: center;
+}
+
+#gauge-speed {
+	width: 100%;
+	height: 270px;
+	margin: 8px auto;
+}
+
+#rpm {
+	margin-top: -64px;
+	margin-bottom: 32px;
+	font-size: 32px;
+	color: #DDD;
+}
+
+.gauges-small {
+	display: flex;
+	margin: 0 auto;
+	align-items: center;
+	justify-content: center;
+	color: #888;
+	text-align: center;
+	gap: 8px;
+}
+
+.statbox {
+	width: 100%;
+	flex: 1;
+}
+.statbox .title {
+	font-size: 10px;
+}
+.statbox .stat {
+	font-size: 18px;
+}
+.statbox .bottom {
+	margin: 8px 0;
+}
+.progress {
+	background: #DDD3;
+	width: 100%;
+	height: 2px;
+	position: relative;
+}
+.progress::after {
+	content: " ";
+	position: absolute;
+	top: 0;
+	left: 0;
+	height: 100%;
+	width: var(--value);
+	min-width: 2px;
+	background: #DDD;
+	transition: all .2s;
+}
+.progress.warn::after {
+	background: #FB0;
+}
+@keyframes flash {
+	0% { opacity: 1; }
+	50% { opacity: .25; }
+	100% { opacity: 1; }
+}
+.progress.crit::after {
+	background: #F22 !important;
+	animation: flash 1s linear infinite;
+}
+
+
+#connection-status {
+	background: #333;
+	margin: 0 auto;
+	padding: 14px 16px;
+	text-align: center;
+	border-radius: 24px;
 }
