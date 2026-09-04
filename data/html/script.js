@@ -151,7 +151,7 @@ const classWarn = (dom, className, lowThreshold, highThreshold, value) => {
 setInterval(() => {
 	let spd = (incomingData.speedL + incomingData.speedR) / 2
 	gaugeSpeed.set(spd)
-	document.getElementById("rpm").innerText = spd
+	document.getElementById("rpm").innerText = Math.round(spd)
 	sendControls()
 }, 25)
 
