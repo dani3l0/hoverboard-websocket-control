@@ -8,8 +8,7 @@ let incomingData = {
 	batV: 0,
 	temp: 0,
 }
-// const host = window.location.host
-const host = "192.168.1.243"
+const host = window.location.host
 let rssiData = {
 	rssi: -100,
 	clients: 0,
@@ -83,7 +82,7 @@ const initJoystick = () => {
 		speed = Math.round((-y / radius) * 1000)
 		steer = Math.round((x / radius) * 1000)
 	}
-	
+
 	const end = () => {
 		active = false
 		handle.style.left = '50%'
