@@ -172,23 +172,23 @@ setInterval(() => {
 
 	let rs = rssiData.rssi
 	let prssi = document.getElementById("progress-rssi")
-	prssi.setAttribute("style", `--value: ${progress(-95, -50, rs)}%`)
-	classWarn(prssi, "warn", -83, 1, rs)
-	classWarn(prssi, "crit", -90, 1, rs)
+	prssi.setAttribute("style", `--value: ${progress(-98, -50, rs)}%`)
+	classWarn(prssi, "warn", -82, 1, rs)
+	classWarn(prssi, "crit", -91, 1, rs)
 	document.getElementById("stat-rssi").innerText = `${rs} dBM`
 
 	let temperatur = incomingData.temp / 10
 	let ptemp = document.getElementById("progress-temp")
-	ptemp.setAttribute("style", `--value: ${progress(30, 60, temperatur)}%`)
-	classWarn(ptemp, "warn", -1000, 52.5, temperatur)
-	classWarn(ptemp, "crit", -1000, 56, temperatur)
+	ptemp.setAttribute("style", `--value: ${progress(42, 62, temperatur)}%`)
+	classWarn(ptemp, "warn", -1000, 54, temperatur)
+	classWarn(ptemp, "crit", -1000, 58, temperatur)
 	document.getElementById("stat-temp").innerText = `${temperatur} °C`
 
 	let batt = incomingData.batV / 100
 	let pbattery = document.getElementById("progress-battery")
-	pbattery.setAttribute("style", `--value: ${progress(34, 41, batt)}%`)
-	classWarn(pbattery, "warn", 37, 45, batt)
-	classWarn(pbattery, "crit", 35, 50, batt)
+	pbattery.setAttribute("style", `--value: ${progress(34, 41.5, batt)}%`)
+	classWarn(pbattery, "warn", 37, 44, batt)
+	classWarn(pbattery, "crit", 35, 45, batt)
 	document.getElementById("stat-battery").innerText = `${(batt).toFixed(1)} V`
 }, 250)
 
