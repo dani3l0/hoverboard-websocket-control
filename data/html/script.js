@@ -106,7 +106,14 @@ initJoystick()
 
 
 // Gauges
-const labels = [0, 100, 200, 300, 400, 500, 600, 700, 800, 900]
+const generateLabels = (max, steps) => {
+	let arr = []
+	for (let i = 0; i <= max; i += (max / steps)) {
+		arr.push(i)
+	}
+	return arr
+}
+const labels = generateLabels(600, 10)
 let gaugeSpeed = new Gauge(document.getElementById("gauge-speed")).setOptions({
 	angle: -0.2, // The span of the gauge arc
 	lineWidth: 0.02, // The line thickness
@@ -148,9 +155,9 @@ const classWarn = (dom, className, lowThreshold, highThreshold, value) => {
 
 // Loop
 setInterval(() => {
-	let spd = (incomingData.speedL + incomingData.speedR) / 2
+	let spd = Math.round(Math.abs(incomingData.speedL) + Math.abs(incomingData.speedR))
 	gaugeSpeed.set(spd)
-	document.getElementById("rpm").innerText = Math.round(spd)
+	document.getElementById("rpm").innerText = spd
 	sendControls()
 }, 25)
 
