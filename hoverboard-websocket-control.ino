@@ -79,7 +79,16 @@ void setup(){
   server.begin();
 }
 
+// Throttler for RSSI information
 int websocketSendCounter = 0;
+
+// multiply by 2 because int16 from the controller, 9 is the number of data fields (18 bytes in total)
+const int bufferSize = 2 * 9;
+uint8_t buffer[bufferSize];
+int len = 0;
+
+// UART time window filter
+unsigned long lastByteTime = 0;
 
 void loop() {
   // Cleanup obsolete websocket clients
@@ -92,16 +101,23 @@ void loop() {
     websocketSendCounter = 0;
   }
 
+  // Cleanup last incomplete packet, 2ms window
+  if (len > 0 && (millis() - lastByteTime) >= 2) len = 0;
+
   // Read Serial2 data and send it via websockets
-  if (Serial2.available()) {
-    uint8_t buffer[256];
-    int len = 0;
-    while (Serial2.available() && len < 256) {
-      buffer[len++] = Serial2.read();
+  while (Serial2.available()) {
+    if (len < bufferSize) buffer[len++] = Serial2.read();
+    else Serial2.read();
+
+    // Send data via websockets
+    if (len == bufferSize) {
+      ws.binaryAll(buffer, len);
+      len = 0;
     }
-    ws.binaryAll(buffer, len);
+
+    lastByteTime = millis();
   }
 
-  // Minor sleep
-  delay(5);
+  // Sleep ...
+  delay(1);
 }
