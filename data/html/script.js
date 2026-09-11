@@ -161,7 +161,7 @@ setInterval(() => {
 	gaugeSpeed.set(spd)
 	document.getElementById("rpm").innerText = spd
 	sendControls()
-}, 25)
+}, 50)
 
 // Slower loop
 setInterval(() => {
@@ -181,7 +181,7 @@ setInterval(() => {
 
 	let temperatur = incomingData.temp / 10
 	let ptemp = document.getElementById("progress-temp")
-	ptemp.setAttribute("style", `--value: ${progress(42, 62, temperatur)}%`)
+	ptemp.setAttribute("style", `--value: ${progress(35, 60, temperatur)}%`)
 	classWarn(ptemp, "warn", -1000, 54, temperatur)
 	classWarn(ptemp, "crit", -1000, 58, temperatur)
 	document.getElementById("stat-temp").innerText = `${temperatur} °C`
