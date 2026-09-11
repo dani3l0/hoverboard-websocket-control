@@ -96,13 +96,13 @@ void loop() {
   wsRssi.cleanupClients();
   
   // Send RSSI information
-  if (websocketSendCounter++ > 100) {
+  if (websocketSendCounter++ > 500) {
     if (WiFi.status() == WL_CONNECTED) wsRssi.textAll(String(WiFi.RSSI()) + "," + String(connectedClients));
     websocketSendCounter = 0;
   }
 
-  // Cleanup last incomplete packet, 2ms window
-  if (len > 0 && (millis() - lastByteTime) >= 2) len = 0;
+  // Cleanup last incomplete packet, 5ms window
+  if (len > 0 && (micros() - lastByteTime) >= 5000) len = 0;
 
   // Read Serial2 data and send it via websockets
   while (Serial2.available()) {
@@ -115,7 +115,7 @@ void loop() {
       len = 0;
     }
 
-    lastByteTime = millis();
+    lastByteTime = micros();
   }
 
   // Sleep ...
