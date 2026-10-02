@@ -8,8 +8,7 @@ let incomingData = {
 	batV: 0,
 	temp: 0,
 }
-// const host = window.location.host
-const host = "192.168.1.116"
+const host = window.location.host
 const systemDataDefaults = {
 	rssi: -100,
 	clients: 0,
