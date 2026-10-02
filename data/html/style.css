@@ -177,7 +177,7 @@ body:not(.debug) #darken {
 	bottom: 0;
 	left: 50%;
 	width: 100%;
-	max-width: 640px;
+	max-width: 480px;
 	height: calc(100% - 64px);
 	border-radius: 32px 32px 0 0;
 	max-height: 192px;
@@ -255,4 +255,22 @@ body:not(.debug) #debug {
 	pointer-events: none;
 	opacity: .5;
 	transform: scale(.6);
+}
+
+.actions {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	overflow: hidden;
+	border-radius: 20px;
+	margin-top: 8px;
+}
+.actions button {
+	flex: 1;
+	padding: 8px;
+	background: #222;
+	cursor: pointer;
+}
+#controls-hz {
+	max-width: 80px;
 }

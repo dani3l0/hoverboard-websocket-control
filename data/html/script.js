@@ -22,6 +22,10 @@ let wsSystemLastPacket = 0
 let wsMotorLatency = 0
 let wsSystemLatency = 0
 
+const controlsHzPresets = [5, 10, 20, 25]
+let currentHzPreset = 2
+let controlsPaused = false
+
 // Websocket connection
 let socket
 const initSocket = () => {
@@ -43,6 +47,7 @@ const initSocket = () => {
 initSocket()
 
 const sendControls = () => {
+	if (!systemData.ignition || controlsPaused) return
 	let data = new Uint16Array([0xABCD, steer, speed])
 	let xorChecksum = data.reduce((accumulator, current) => accumulator ^ current, 0)
 	let data2 = new Uint16Array([0xABCD, steer, speed, xorChecksum])
@@ -120,6 +125,9 @@ const initJoystick = () => {
 initJoystick()
 
 
+let sendControlsInterval = setInterval(sendControls, 1000 / controlsHzPresets[currentHzPreset])
+
+
 // Debug window
 document.getElementById("bottom-bar").addEventListener("click", () => {
 	document.body.classList.add("debug")
@@ -134,6 +142,22 @@ document.getElementById("ignition-value").addEventListener("click", e => {
 	dom.classList.add("pending")
 	setTimeout(() => dom.classList.remove("pending"), 3000)
 })
+const updateControlsHz = (e) => {e.innerText = `${controlsHzPresets[currentHzPreset]} Hz`}
+document.getElementById("controls-hz").addEventListener("click", e => {
+	let dom = e.target
+	currentHzPreset++
+	if (currentHzPreset >= controlsHzPresets.length) currentHzPreset = 0
+	clearInterval(sendControlsInterval)
+	sendControlsInterval = setInterval(sendControls, 1000 / controlsHzPresets[currentHzPreset])
+	updateControlsHz(dom)
+})
+updateControlsHz(document.getElementById("controls-hz"))
+const updatePauseControls = (e) => {e.innerText = controlsPaused ? "Resume controls" : "Pause controls"}
+document.getElementById("pause-controls").addEventListener("click", e => {
+	controlsPaused = !controlsPaused
+	updatePauseControls(e.target)
+})
+updatePauseControls(document.getElementById("pause-controls"))
 
 
 // Gauges
@@ -189,7 +213,6 @@ setInterval(() => {
 	let spd = Math.round(Math.abs(incomingData.speedL) + Math.abs(incomingData.speedR))
 	gaugeSpeed.set(spd)
 	document.getElementById("rpm").innerText = spd
-	sendControls()
 }, 50)
 
 // Slower loop
@@ -198,7 +221,7 @@ setInterval(() => {
 	document.getElementById("ignition-status").innerText = `🔑 ${systemData.ignition ? "ON" : "OFF"}`
 
 	// Connection status
-	let connected = socket.readyState == socket.OPEN
+	let connected = systemws.readyState == systemws.OPEN
 	let string = "Disconnected"
 	if (connected) string = "Connected"
 	else if (watchdogMsec < 0) string = "Retrying..."
