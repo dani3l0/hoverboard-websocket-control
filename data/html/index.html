@@ -48,8 +48,46 @@
 		<div id="joystick-base">
 			<div id="joystick-handle"></div>
 		</div>
-		<div id="connection-status">N/A</div>
+		<div id="bottom-bar">
+			<div id="ignition-status"></div>
+			<div id="connection-status"></div>
+		</div>
 	</div>
+
+	<div id="debug">
+		<div class="handle"></div>
+		<div class="content">
+			<div class="left">
+				<div class="ignition">
+					<button id="ignition-value">N/A</button>
+				</div>
+			</div>
+			<div class="right">
+				<div class="row">
+					<i>Motor websocket</i>
+					<b id="motor-connection"></b>
+				</div>
+				<div class="row">
+					<i>Motor latency</i>
+					<b id="motor-latency"></b>
+				</div>
+				<div class="row">
+					<i>System websocket</i>
+					<b id="system-connection"></b>
+				</div>
+				<div class="row">
+					<i>System latency</i>
+					<b id="system-latency"></b>
+				</div>
+				<div class="row">
+					<i>Connections</i>
+					<b id="serial-connections"></b>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div id="darken"></div>
 </body>
 
 <script src="gauge.min.js"></script>

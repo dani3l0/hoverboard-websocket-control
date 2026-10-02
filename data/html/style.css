@@ -9,6 +9,7 @@ body {
 	align-items: center;
 	max-width: 960px;
 	margin: 0 auto;
+	-webkit-tap-highlight-color: transparent;
 }
 
 .joystick {
@@ -116,11 +117,142 @@ body {
 	animation: flash 1s linear infinite;
 }
 
+button {
+	border: none;
+	outline: none;
+	font-size: inherit;
+	font-family: inherit;
+	color: inherit;
+	background: transparent;
+}
 
-#connection-status {
-	background: #333;
+
+#bottom-bar {
 	margin: 0 auto;
-	padding: 14px 16px;
 	text-align: center;
 	border-radius: 24px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 2px;
+	overflow: hidden;
+	cursor: pointer;
+	margin-bottom: 48px;
+	border-radius: 24px;
+}
+#bottom-bar div {
+	background: #333;
+	flex: 1;
+	padding: 10px 8px;
+	border-radius: 2px;
+}
+#ignition-status {
+	max-width: 80px;
+	min-width: 80px;
+}
+
+#darken {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: #1118;
+	backdrop-filter: blur(8px);
+	z-index: 5;
+	transition: all .3s;
+}
+body:not(.debug) #darken {
+	backdrop-filter: none;
+	opacity: 0;
+	pointer-events: none;
+	visibility: hidden;
+}
+
+
+#debug {
+	background: #333;
+	position: fixed;
+	z-index: 10;
+	bottom: 0;
+	left: 50%;
+	width: 100%;
+	max-width: 640px;
+	height: calc(100% - 64px);
+	border-radius: 32px 32px 0 0;
+	max-height: 192px;
+	overflow: hidden;
+	transform: translate(-50%, 0);
+	transition: all .3s;
+}
+#debug .handle {
+	width: 100px;
+	height: 6px;
+	background: #666;
+	border-radius: 10px;
+	margin: 8px auto;
+}
+
+body:not(.debug) #debug {
+	transform: translate(-50%, 100%);
+	pointer-events: none;
+	visibility: hidden;
+}
+
+@media(min-height: 540px) {
+	@media (min-width: 768px) {
+		#debug {
+			left: unset !important;
+			transform: none !important;
+			border-radius: 24px !important;
+			position: relative !important;
+			visibility: visible !important;
+			pointer-events: all !important;
+			margin: 24px auto;
+		}
+		#debug .handle {
+			display: none;
+		}
+	}
+}
+
+#debug .content {
+	display: flex;
+	padding: 12px 8px;
+	color: #888;
+	align-items: center;
+}
+
+#debug .content .right {
+	text-align: left;
+	flex: 1;
+}
+.row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+.row b {
+	margin-left: auto;
+}
+
+#ignition-value {
+	width: 112px;
+	height: 112px;
+	margin: 4px 12px 4px 0;
+	border-radius: 100px;
+	background: #111;
+	font-size: 24px;
+	cursor: pointer;
+	transition: all .3s;
+}
+#ignition-value.on {
+	color: #0F8;
+	font-size: 28px;
+	text-shadow: 0 0 16px #0F8;
+}
+#ignition-value.pending {
+	pointer-events: none;
+	opacity: .5;
+	transform: scale(.6);
 }

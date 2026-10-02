@@ -8,12 +8,19 @@ let incomingData = {
 	batV: 0,
 	temp: 0,
 }
-const host = window.location.host
-let rssiData = {
+// const host = window.location.host
+const host = "192.168.1.116"
+const systemDataDefaults = {
 	rssi: -100,
 	clients: 0,
+	ignition: false,
 }
+let systemData = systemDataDefaults
 let watchdogMsec = 0
+let wsMotorLastPacket = 0
+let wsSystemLastPacket = 0
+let wsMotorLatency = 0
+let wsSystemLatency = 0
 
 // Websocket connection
 let socket
@@ -21,6 +28,9 @@ const initSocket = () => {
 	socket = new WebSocket(`ws://${host}/ws`)
 	socket.binaryType = "arraybuffer"
 	socket.addEventListener("message", e => {
+		let now = new Date().getTime()
+		wsMotorLatency = now - wsMotorLastPacket
+		wsMotorLastPacket = now
 		data = new Int16Array(e.data)
 		incomingData.cmd1 = data[1]
 		incomingData.cmd2 = data[2]
@@ -28,7 +38,6 @@ const initSocket = () => {
 		incomingData.speedL = data[4]
 		incomingData.batV = data[5]
 		incomingData.temp = data[6]
-		watchdogMsec = 0
 	})
 }
 initSocket()
@@ -41,21 +50,25 @@ const sendControls = () => {
 }
 
 
-// Websocket RSSI connection
-let rssi
-const initRssi = () => {
-rssi = new WebSocket(`ws://${host}/rssi`)
-	rssi.addEventListener("message", e => {
+// Websocket system connection
+let systemws
+const initSystemConnection = () => {
+	systemws = new WebSocket(`ws://${host}/system`)
+	systemws.addEventListener("message", e => {
+		watchdogMsec = 0
+		let now = new Date().getTime()
+		wsSystemLatency = now - wsSystemLastPacket
+		wsSystemLastPacket = now
 		let arr = e.data.split(",")
-		rssiData.rssi = Number(arr[0])
-		rssiData.clients = Number(arr[1])
+		systemData.rssi = Number(arr[0])
+		systemData.clients = Number(arr[1])
+		systemData.ignition = arr[2] == 1
 	})
-	rssi.addEventListener("close", e => {
-		rssiData.rssi = -100
-		rssiData.clients = 0
+	systemws.addEventListener("close", e => {
+		systemData = systemDataDefaults
 	})
 }
-initRssi()
+initSystemConnection()
 
 
 // Joystick controls
@@ -105,6 +118,22 @@ const initJoystick = () => {
 }
 
 initJoystick()
+
+
+// Debug window
+document.getElementById("bottom-bar").addEventListener("click", () => {
+	document.body.classList.add("debug")
+})
+document.getElementById("darken").addEventListener("click", () => {
+	document.body.classList.remove("debug")
+})
+document.getElementById("ignition-value").addEventListener("click", e => {
+	let dom = e.target
+	if (dom.classList.contains("pending")) return
+	systemws.send("power")
+	dom.classList.add("pending")
+	setTimeout(() => dom.classList.remove("pending"), 3000)
+})
 
 
 // Gauges
@@ -165,20 +194,26 @@ setInterval(() => {
 
 // Slower loop
 setInterval(() => {
+	// Ignition state
+	document.getElementById("ignition-status").innerText = `🔑 ${systemData.ignition ? "ON" : "OFF"}`
+
+	// Connection status
 	let connected = socket.readyState == socket.OPEN
 	let string = "Disconnected"
 	if (connected) string = "Connected"
 	else if (watchdogMsec < 0) string = "Retrying..."
 	else string = "Connecting..."
-	document.getElementById("connection-status").innerText = `[${rssiData.clients}] ${string}`
+	document.getElementById("connection-status").innerText = `📡 ${string}`
 
-	let rs = rssiData.rssi
+	// RSSI bar
+	let rs = systemData.rssi
 	let prssi = document.getElementById("progress-rssi")
 	prssi.setAttribute("style", `--value: ${progress(-98, -50, rs)}%`)
 	classWarn(prssi, "warn", -82, 1, rs)
-	classWarn(prssi, "crit", -91, 1, rs)
+	classWarn(prssi, "crit", -90, 1, rs)
 	document.getElementById("stat-rssi").innerText = `${rs} dBM`
 
+	// Temperature bar
 	let temperatur = incomingData.temp / 10
 	let ptemp = document.getElementById("progress-temp")
 	ptemp.setAttribute("style", `--value: ${progress(35, 60, temperatur)}%`)
@@ -186,12 +221,39 @@ setInterval(() => {
 	classWarn(ptemp, "crit", -1000, 58, temperatur)
 	document.getElementById("stat-temp").innerText = `${temperatur} °C`
 
+	// Battery bar
 	let batt = incomingData.batV / 100
 	let pbattery = document.getElementById("progress-battery")
 	pbattery.setAttribute("style", `--value: ${progress(34, 41.5, batt)}%`)
 	classWarn(pbattery, "warn", 37, 44, batt)
 	classWarn(pbattery, "crit", 35, 45, batt)
 	document.getElementById("stat-battery").innerText = `${(batt).toFixed(1)} V`
+
+	// Debug menu
+	let now = new Date().getTime()
+	let dataFlowMotor = (now - wsMotorLastPacket) < 1500
+	let dataFlowSystem = (now - wsSystemLastPacket) < 3000
+	let strMotor = "Error"
+	let strMotorLatency = "Unknown"
+	let strSystem = "Error"
+	let strSystemLatency = "Unknown"
+	if (dataFlowMotor) {
+		strMotor = "OK"
+		strMotorLatency = `${wsMotorLatency}ms`
+	}
+	else if (socket.readyState == socket.OPEN) strMotor = "No data"
+	if (dataFlowSystem) {
+		strSystem = "OK"
+		strSystemLatency = `${wsSystemLatency}ms`
+	}
+	document.getElementById("motor-connection").innerText = strMotor
+	document.getElementById("motor-latency").innerText = strMotorLatency
+	document.getElementById("system-connection").innerText = strSystem
+	document.getElementById("system-latency").innerText = strSystemLatency
+	document.getElementById("serial-connections").innerText = systemData.clients == 1 ? "1" : `${systemData.clients}[!]`
+	let ignValue = document.getElementById("ignition-value")
+	ignValue.innerText = systemData.ignition ? "ON" : "OFF"
+	systemData.ignition ? ignValue.classList.add("on") : ignValue.classList.remove("on")
 }, 250)
 
 
@@ -199,9 +261,9 @@ setInterval(() => {
 setInterval(() => {
 	if (watchdogMsec > 5000) {
 		socket.close()
-		rssi.close()
+		systemws.close()
 		initSocket()
-		initRssi()
+		initSystemConnection()
 		watchdogMsec = -2500
 	}
 	watchdogMsec += 100
