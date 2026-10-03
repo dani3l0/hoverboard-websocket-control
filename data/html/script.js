@@ -96,8 +96,8 @@ const initJoystick = () => {
 		}
 		handle.style.left = `calc(50% + ${(x / radius) * 50}%)`
 		handle.style.top = `calc(50% + ${(y / radius) * 50}%)`
-		let uneasedSpeed = -y / radius
-		let uneasedSteer = x / radius
+		let uneasedSpeed = -y / radius * 0.7
+		let uneasedSteer = x / radius * 0.7
 		speed = Math.round(uneasedSpeed * Math.abs(uneasedSpeed) * 1000)
 		steer = Math.round(uneasedSteer * Math.abs(uneasedSteer) * 1000)
 	}
@@ -167,7 +167,7 @@ const generateLabels = (max, steps) => {
 	}
 	return arr
 }
-const labels = generateLabels(600, 10)
+const labels = generateLabels(10, 10)
 let gaugeSpeed = new Gauge(document.getElementById("gauge-speed")).setOptions({
 	angle: -0.2, // The span of the gauge arc
 	lineWidth: 0.02, // The line thickness
@@ -210,9 +210,15 @@ const classWarn = (dom, className, lowThreshold, highThreshold, value) => {
 // Loop
 setInterval(() => {
 	let spd = Math.round(Math.abs(incomingData.speedL) + Math.abs(incomingData.speedR))
+	spd /= 2							// Revs were summed from two wheels
+	let diameter = Math.PI * 0.25		// Wheel length, meters
+	spd *= 60							// Revs per hour
+	spd *= diameter						// Meters per hour
+	spd /= 1000							// Kilometers per hour
 	gaugeSpeed.set(spd)
-	document.getElementById("rpm").innerText = spd
-}, 50)
+	document.getElementById("speed-kph").innerText = Math.floor(spd)
+	document.getElementById("speed-subkph").innerText = Math.floor(10 * (spd - Math.floor(spd)))
+}, 100)
 
 // Slower loop
 setInterval(() => {
