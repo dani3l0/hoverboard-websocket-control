@@ -98,8 +98,8 @@ const initJoystick = () => {
 		handle.style.top = `calc(50% + ${(y / radius) * 50}%)`
 		let uneasedSpeed = -y / radius
 		let uneasedSteer = x / radius
-		speed = Math.round(uneasedSpeed ** 2 * 1000)
-		steer = Math.round(uneasedSteer ** 2 * 1000)
+		speed = Math.round(uneasedSpeed * Math.abs(uneasedSpeed) * 1000)
+		steer = Math.round(uneasedSteer * Math.abs(uneasedSteer) * 1000)
 	}
 
 	const end = () => {
