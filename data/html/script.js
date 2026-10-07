@@ -21,7 +21,7 @@ let incomingData = incomingDataDefaults
 
 // Incoming system data
 const systemDataDefaults = {
-	rssi: -100,
+	rssi: -111,
 	clients: 0,
 	ignition: false,
 }
@@ -298,14 +298,17 @@ setInterval(() => {
 	prssi.setAttribute("style", `--value: ${progress(-95, -40, rs)}%`)
 	classWarn(prssi, "warn", -79, 1, rs)
 	classWarn(prssi, "crit", -88, 1, rs)
-	document.getElementById("stat-rssi").innerText = (rs == 0) ? "AP Mode" : `${rs} dBM`
+	let rssiText = `${rs} dBM`
+	if (rs == 0) rssiText = "AP Mode"
+	else if (rs == systemDataDefaults.rssi) rssiText = "N/A"
+	document.getElementById("stat-rssi").innerText = rssiText
 
 	// Temperature bar
 	let temperatur = incomingData.temp / 10
 	let ptemp = document.getElementById("progress-temp")
 	ptemp.setAttribute("style", `--value: ${progress(35, 60, temperatur)}%`)
-	classWarn(ptemp, "warn", -1000, 54, temperatur)
-	classWarn(ptemp, "crit", -1000, 58, temperatur)
+	classWarn(ptemp, "warn", -100, 54, temperatur)
+	classWarn(ptemp, "crit", -200, 58, temperatur)
 	document.getElementById("stat-temp").innerText = (incomingData.temp == incomingDataDefaults.temp) ? "N/A" : `${temperatur} °C`
 
 	// Battery bar
