@@ -17,7 +17,6 @@ const incomingDataDefaults = {
 	batV: 0,
 	temp: -2732,
 }
-let incomingData = incomingDataDefaults
 
 // Incoming system data
 const systemDataDefaults = {
@@ -25,7 +24,6 @@ const systemDataDefaults = {
 	clients: 0,
 	ignition: false,
 }
-let systemData = systemDataDefaults
 
 // Websocket watchdog & stats
 let watchdogMsec = 0
@@ -45,6 +43,12 @@ let sportModeEnabled = false
 
 
 ////////////////////////// Magic //////////////////////////
+
+const copyObj = (obj) => {
+	return JSON.parse(JSON.stringify(obj))
+}
+let systemData = copyObj(systemDataDefaults)
+let incomingData = copyObj(incomingDataDefaults)
 
 // Motor websocket connection
 let socket
@@ -346,8 +350,8 @@ setInterval(() => {
 	if (watchdogMsec > 5000) {
 		socket.close()
 		systemws.close()
-		systemData = systemDataDefaults
-		incomingData = incomingDataDefaults
+		systemData = copyObj(systemDataDefaults)
+		incomingData = copyObj(incomingDataDefaults)
 		initSocket()
 		initSystemConnection()
 		watchdogMsec = -2500
