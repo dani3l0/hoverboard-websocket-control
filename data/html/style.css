@@ -6,6 +6,7 @@ body {
 	color: #DDD;
 	display: flex;
 	flex-wrap: wrap;
+	gap: 8px;
 	align-items: center;
 	max-width: 960px;
 	margin: 0 auto;
@@ -231,8 +232,8 @@ body:not(.debug) #debug {
 	visibility: hidden;
 }
 
-@media(min-height: 540px) {
-	@media (min-width: 768px) {
+@media(min-height: 600px) {
+	@media (min-width: 750px) {
 		#debug {
 			left: unset !important;
 			transform: none !important;
