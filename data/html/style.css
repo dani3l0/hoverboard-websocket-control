@@ -9,6 +9,7 @@ body {
 	align-items: center;
 	max-width: 960px;
 	margin: 0 auto;
+	overflow-x: hidden;
 	-webkit-tap-highlight-color: transparent;
 }
 
@@ -30,7 +31,8 @@ body {
 #joystick-handle {
 	width: 54px;
 	height: 54px;
-	background: #F52;
+	background: #0CC;
+	border: 4px solid #0FF;
 	border-radius: 50%;
 	pointer-events: none;
 	position: absolute;
@@ -38,8 +40,23 @@ body {
 	top: 50%;
 	transform: translate(-50%, -50%);
 	cursor: pointer;
+	transition: background .4s, border .4s;
 }
-#joystick-log, #debug {
+@keyframes pulse {
+	30% {box-shadow: 0 0 0 #FB4B}
+	100% {box-shadow: 0 0 16px #FB4B}
+}
+#joystick-handle.sport {
+	background: #C83;
+	border-color: #FB4;
+	animation: pulse 2s infinite alternate;
+}
+#joystick-handle.paused {
+	background: #555 !important;
+	border-color: #666 !important;
+	animation: none !important;
+}
+#debug {
 	font-family: monospace;
 	color: #0FF;
 	text-align: center;
@@ -247,6 +264,9 @@ body:not(.debug) #debug {
 	align-items: center;
 	justify-content: space-between;
 }
+.row i {
+	font-style: normal;
+}
 .row b {
 	margin-left: auto;
 }
@@ -263,7 +283,7 @@ body:not(.debug) #debug {
 }
 #ignition-value.on {
 	color: #0F8;
-	font-size: 28px;
+	font-size: 30px;
 	text-shadow: 0 0 16px #0F8;
 }
 #ignition-value.pending {
@@ -274,18 +294,92 @@ body:not(.debug) #debug {
 
 .actions {
 	display: flex;
-	align-items: center;
-	gap: 4px;
+	flex-direction: column;
+	align-items: stretch;
 	overflow: hidden;
 	border-radius: 20px;
 	margin-top: 8px;
+	gap: 4px;
+}
+.actions div {
+	display: flex;
+	gap: 4px;
+	flex: 1;
 }
 .actions button {
 	flex: 1;
-	padding: 8px;
+	padding: 10px;
 	background: #222;
 	cursor: pointer;
+	transition: all .3s;
 }
 #controls-hz {
 	max-width: 80px;
+}
+#pause-controls.paused {
+	color: #F00;
+	text-shadow: 0 0 24px #F00;
+}
+#sport-mode.enabled {
+	color: #F60;
+	font-weight: bold;
+	text-shadow: 0 0 24px #F60;
+}
+
+#toggle-wifi-prompt, #toggle-wifi-end {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	backdrop-filter: blur(0);
+	z-index: 100;
+	background: #0008;
+	opacity: 0;
+	visibility: hidden;
+	pointer-events: none;
+	transition: all .6s;
+}
+#toggle-wifi-prompt.visible {
+	backdrop-filter: blur(32px);
+	opacity: 1;
+	visibility: visible;
+	pointer-events: all;
+}
+#toggle-wifi-prompt .icon {
+	text-align: center;
+	font-size: 64px;
+}
+#toggle-wifi-prompt .title {
+	text-align: center;
+	font-size: 28px;
+	margin-top: 4px;
+}
+.centered, #toggle-wifi-end .info {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	width: calc(100% - 24px);
+	max-width: 540px;
+}
+#toggle-wifi-confirm {
+	color: #333;
+	background: #F44;
+	font-weight: bold;
+}
+#toggle-wifi-end {
+	z-index: 1000;
+	background: #000;
+}
+#toggle-wifi-end.visible {
+	opacity: 1;
+	visibility: visible;
+	pointer-events: all;
+}
+#toggle-wifi-end .info {
+	font-size: 24px;
+	font-weight: bold;
+	opacity: .5;
+	text-align: center;
 }

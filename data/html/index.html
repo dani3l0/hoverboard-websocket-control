@@ -79,14 +79,41 @@
 					<b id="serial-connections"></b>
 				</div>
 				<div class="actions">
-					<button id="pause-controls"></button>
-					<button id="controls-hz"></button>
+					<div>
+						<button id="sport-mode">SPORT</button>
+						<button id="toggle-wifi">WiFi Mode</button>
+					</div>
+					<div>
+						<button id="pause-controls">Pause controls</button>
+						<button id="controls-hz"></button>
+					</div>
 				</div>
 			</div>
 		</div>
 	</div>
-
 	<div id="darken"></div>
+
+	<div id="toggle-wifi-prompt">
+		<div class="centered">
+			<div class="icon">⚠️</div>
+			<div class="title">Warning</div>
+			<div class="description">
+				<p>This will switch ESP mode from <b id="toggle-wifi-current"></b> to <b id="toggle-wifi-target"></b>.</p>
+				<p>Please make sure you want to do this, as you may permanently lose remote access to device if you're away from it.</p>
+				<p>Current connection will be lost and screen will go blank.</p>
+				<p>Continue?</p>
+			</div>
+			<div class="actions">
+				<div>
+					<button id="toggle-wifi-cancel">Cancel</button>
+					<button id="toggle-wifi-confirm">Yes</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div id="toggle-wifi-end">
+		<div class="info">Connection lost</div>
+	</div>
 </body>
 
 <script src="gauge.min.js"></script>

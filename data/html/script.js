@@ -1,31 +1,52 @@
+//////////////////////// Variables ////////////////////////
+
+// Auto-detect if development or on-device use
+const host = !["127.0.0.1", "localhost"].includes(window.location.hostname) ?
+	window.location.host : "192.168.4.1"
+
+// Data sent to target device
 let speed = 0
 let steer = 0
-let incomingData = {
+
+// Incoming motor data
+const incomingDataDefaults = {
 	cmd1: 0,
 	cmd2: 0,
 	speedR: 0,
 	speedL: 0,
 	batV: 0,
-	temp: 0,
+	temp: -2732,
 }
-const host = window.location.host
+let incomingData = incomingDataDefaults
+
+// Incoming system data
 const systemDataDefaults = {
 	rssi: -100,
 	clients: 0,
 	ignition: false,
 }
 let systemData = systemDataDefaults
+
+// Websocket watchdog & stats
 let watchdogMsec = 0
 let wsMotorLastPacket = 0
 let wsSystemLastPacket = 0
 let wsMotorLatency = 0
 let wsSystemLatency = 0
 
+// Controls variables
 const controlsHzPresets = [5, 10, 20, 25]
 let currentHzPreset = 2
 let controlsPaused = false
 
-// Websocket connection
+// Sport mode
+let sportModeEnabled = false
+
+
+
+////////////////////////// Magic //////////////////////////
+
+// Motor websocket connection
 let socket
 const initSocket = () => {
 	socket = new WebSocket(`ws://${host}/ws`)
@@ -44,14 +65,6 @@ const initSocket = () => {
 	})
 }
 initSocket()
-
-const sendControls = () => {
-	if (!systemData.ignition || controlsPaused) return
-	let data = new Uint16Array([0xABCD, steer, speed])
-	let xorChecksum = data.reduce((accumulator, current) => accumulator ^ current, 0)
-	let data2 = new Uint16Array([0xABCD, steer, speed, xorChecksum])
-	if (socket.readyState == socket.OPEN) socket.send(data2)
-}
 
 
 // Websocket system connection
@@ -76,6 +89,9 @@ initSystemConnection()
 
 
 // Joystick controls
+const powerPow = (x) => {
+	return Math.sign(x) * Math.pow(Math.abs(x), 1.25)
+}
 const initJoystick = () => {
 	const base = document.getElementById('joystick-base')
 	const handle = document.getElementById('joystick-handle')
@@ -96,8 +112,11 @@ const initJoystick = () => {
 		}
 		handle.style.left = `calc(50% + ${(x / radius) * 50}%)`
 		handle.style.top = `calc(50% + ${(y / radius) * 50}%)`
-		let uneasedSpeed = -y / radius * 0.7
-		let uneasedSteer = x / radius * 0.7
+		let uneasedSpeed = -y / radius
+		let uneasedSteer = x / radius
+		const muzzle = 1 - 0.3 * Number(!sportModeEnabled)
+		uneasedSpeed *= muzzle
+		uneasedSteer *= muzzle
 		speed = Math.round(uneasedSpeed * Math.abs(uneasedSpeed) * 1000)
 		steer = Math.round(uneasedSteer * Math.abs(uneasedSteer) * 1000)
 	}
@@ -123,7 +142,14 @@ const initJoystick = () => {
 
 initJoystick()
 
-
+// Sending joystick position data
+const sendControls = () => {
+	if (!systemData.ignition || controlsPaused) return
+	let data = new Uint16Array([0xABCD, steer, speed])
+	let xorChecksum = data.reduce((accumulator, current) => accumulator ^ current, 0)
+	let data2 = new Uint16Array([0xABCD, steer, speed, xorChecksum])
+	if (socket.readyState == socket.OPEN) socket.send(data2)
+}
 let sendControlsInterval = setInterval(sendControls, 1000 / controlsHzPresets[currentHzPreset])
 
 
@@ -134,6 +160,7 @@ document.getElementById("bottom-bar").addEventListener("click", () => {
 document.getElementById("darken").addEventListener("click", () => {
 	document.body.classList.remove("debug")
 })
+// Ignition
 document.getElementById("ignition-value").addEventListener("click", e => {
 	let dom = e.target
 	if (dom.classList.contains("pending")) return
@@ -141,6 +168,7 @@ document.getElementById("ignition-value").addEventListener("click", e => {
 	dom.classList.add("pending")
 	setTimeout(() => dom.classList.remove("pending"), 3000)
 })
+// Hz controls
 const updateControlsHz = (e) => {e.innerText = `${controlsHzPresets[currentHzPreset]} Hz`}
 document.getElementById("controls-hz").addEventListener("click", e => {
 	let dom = e.target
@@ -151,12 +179,43 @@ document.getElementById("controls-hz").addEventListener("click", e => {
 	updateControlsHz(dom)
 })
 updateControlsHz(document.getElementById("controls-hz"))
-const updatePauseControls = (e) => {e.innerText = controlsPaused ? "Controls paused" : "Pause controls"}
+// Pause controls
+const updatePauseControls = (e) => {
+	let joystick = document.getElementById("joystick-handle")
+	controlsPaused ? e.classList.add("paused") : e.classList.remove("paused")
+	controlsPaused ? joystick.classList.add("paused") : joystick.classList.remove("paused")
+}
 document.getElementById("pause-controls").addEventListener("click", e => {
 	controlsPaused = !controlsPaused
 	updatePauseControls(e.target)
 })
 updatePauseControls(document.getElementById("pause-controls"))
+// SPORT controls
+const updateSportControls = (e) => {
+	let joystick = document.getElementById("joystick-handle")
+	sportModeEnabled ? e.classList.add("enabled") : e.classList.remove("enabled")
+	sportModeEnabled ? joystick.classList.add("sport") : joystick.classList.remove("sport")
+}
+document.getElementById("sport-mode").addEventListener("click", e => {
+	sportModeEnabled = !sportModeEnabled
+	updateSportControls(e.target)
+})
+updatePauseControls(document.getElementById("sport-mode"))
+// Toggle WiFi mode
+document.getElementById("toggle-wifi").addEventListener("click", () => {
+	const ap = "AP (WiFi hotspot)"
+	const sta = "STA (WiFi client)"
+	document.getElementById("toggle-wifi-current").innerText = systemData.rssi == 0 ? ap : sta
+	document.getElementById("toggle-wifi-target").innerText = systemData.rssi == 0 ? sta : ap
+	document.getElementById("toggle-wifi-prompt").classList.add("visible")
+})
+document.getElementById("toggle-wifi-cancel").addEventListener("click", () => {
+	document.getElementById("toggle-wifi-prompt").classList.remove("visible")
+})
+document.getElementById("toggle-wifi-confirm").addEventListener("click", () => {
+	systemws.send("switchwifi")
+	document.getElementById("toggle-wifi-end").classList.add("visible")
+})
 
 
 // Gauges
@@ -167,7 +226,7 @@ const generateLabels = (max, steps) => {
 	}
 	return arr
 }
-const labels = generateLabels(10, 10)
+const labels = generateLabels(18, 9)
 let gaugeSpeed = new Gauge(document.getElementById("gauge-speed")).setOptions({
 	angle: -0.2, // The span of the gauge arc
 	lineWidth: 0.02, // The line thickness
@@ -175,7 +234,7 @@ let gaugeSpeed = new Gauge(document.getElementById("gauge-speed")).setOptions({
 	pointer: {
 	  length: 0.5, // // Relative to gauge radius
 	  strokeWidth: 0.025, // The thickness
-	  color: '#F64' // Fill color
+	  color: '#F33' // Fill color
 	},
 	limitMax: true,     // If false, max value increases automatically if value > maxValue
 	limitMin: true,     // If true, the min value of the gauge will be fixed
@@ -196,7 +255,7 @@ gaugeSpeed.minValue = 0
 gaugeSpeed.animationSpeed = 32
 
 
-
+// Class selector for summary boxes located below gauge
 const progress = (min, max, value) => {
 	let pp = ((value - min) / (max - min)) * 100
 	return Math.max(0, Math.min(pp, 100))
@@ -210,8 +269,8 @@ const classWarn = (dom, className, lowThreshold, highThreshold, value) => {
 // Loop
 setInterval(() => {
 	let spd = Math.round(Math.abs(incomingData.speedL) + Math.abs(incomingData.speedR))
-	spd /= 2							// Revs were summed from two wheels
-	let diameter = Math.PI * 0.25		// Wheel length, meters
+	spd /= 2							// Divide total revs by number of wheels
+	let diameter = Math.PI * 0.25		// Wheel length, meters (0.25m)
 	spd *= 60							// Revs per hour
 	spd *= diameter						// Meters per hour
 	spd /= 1000							// Kilometers per hour
@@ -247,7 +306,7 @@ setInterval(() => {
 	ptemp.setAttribute("style", `--value: ${progress(35, 60, temperatur)}%`)
 	classWarn(ptemp, "warn", -1000, 54, temperatur)
 	classWarn(ptemp, "crit", -1000, 58, temperatur)
-	document.getElementById("stat-temp").innerText = `${temperatur} °C`
+	document.getElementById("stat-temp").innerText = (incomingData.temp == incomingDataDefaults.temp) ? "N/A" : `${temperatur} °C`
 
 	// Battery bar
 	let batt = incomingData.batV / 100
@@ -255,7 +314,7 @@ setInterval(() => {
 	pbattery.setAttribute("style", `--value: ${progress(34, 41.5, batt)}%`)
 	classWarn(pbattery, "warn", 37.2, 45, batt)
 	classWarn(pbattery, "crit", 35.1, 48, batt)
-	document.getElementById("stat-battery").innerText = `${(batt).toFixed(1)} V`
+	document.getElementById("stat-battery").innerText = (incomingData.batV == incomingDataDefaults.batV) ? "N/A" : `${(batt).toFixed(1)} V`
 
 	// Debug menu
 	let now = new Date().getTime()
@@ -284,6 +343,8 @@ setInterval(() => {
 	if (watchdogMsec > 5000) {
 		socket.close()
 		systemws.close()
+		systemData = systemDataDefaults
+		incomingData = incomingDataDefaults
 		initSocket()
 		initSystemConnection()
 		watchdogMsec = -2500
