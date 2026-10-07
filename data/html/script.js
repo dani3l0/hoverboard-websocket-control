@@ -151,7 +151,7 @@ document.getElementById("controls-hz").addEventListener("click", e => {
 	updateControlsHz(dom)
 })
 updateControlsHz(document.getElementById("controls-hz"))
-const updatePauseControls = (e) => {e.innerText = controlsPaused ? "Resume controls" : "Pause controls"}
+const updatePauseControls = (e) => {e.innerText = controlsPaused ? "Controls paused" : "Pause controls"}
 document.getElementById("pause-controls").addEventListener("click", e => {
 	controlsPaused = !controlsPaused
 	updatePauseControls(e.target)
@@ -236,10 +236,10 @@ setInterval(() => {
 	// RSSI bar
 	let rs = systemData.rssi
 	let prssi = document.getElementById("progress-rssi")
-	prssi.setAttribute("style", `--value: ${progress(-98, -50, rs)}%`)
-	classWarn(prssi, "warn", -82, 1, rs)
-	classWarn(prssi, "crit", -90, 1, rs)
-	document.getElementById("stat-rssi").innerText = `${rs} dBM`
+	prssi.setAttribute("style", `--value: ${progress(-95, -40, rs)}%`)
+	classWarn(prssi, "warn", -79, 1, rs)
+	classWarn(prssi, "crit", -88, 1, rs)
+	document.getElementById("stat-rssi").innerText = (rs == 0) ? "AP Mode" : `${rs} dBM`
 
 	// Temperature bar
 	let temperatur = incomingData.temp / 10
@@ -253,32 +253,26 @@ setInterval(() => {
 	let batt = incomingData.batV / 100
 	let pbattery = document.getElementById("progress-battery")
 	pbattery.setAttribute("style", `--value: ${progress(34, 41.5, batt)}%`)
-	classWarn(pbattery, "warn", 37, 44, batt)
-	classWarn(pbattery, "crit", 35, 45, batt)
+	classWarn(pbattery, "warn", 37.2, 45, batt)
+	classWarn(pbattery, "crit", 35.1, 48, batt)
 	document.getElementById("stat-battery").innerText = `${(batt).toFixed(1)} V`
 
 	// Debug menu
 	let now = new Date().getTime()
+	// Websocket motor
 	let dataFlowMotor = (now - wsMotorLastPacket) < 1500
-	let dataFlowSystem = (now - wsSystemLastPacket) < 3000
 	let strMotor = "Error"
-	let strMotorLatency = "Unknown"
-	let strSystem = "Error"
-	let strSystemLatency = "Unknown"
-	if (dataFlowMotor) {
-		strMotor = "OK"
-		strMotorLatency = `${wsMotorLatency}ms`
-	}
+	if (dataFlowMotor) strMotor = `${wsMotorLatency}ms`
 	else if (socket.readyState == socket.OPEN) strMotor = "No data"
-	if (dataFlowSystem) {
-		strSystem = "OK"
-		strSystemLatency = `${wsSystemLatency}ms`
-	}
 	document.getElementById("motor-connection").innerText = strMotor
-	document.getElementById("motor-latency").innerText = strMotorLatency
+	// Websocket system
+	let dataFlowSystem = (now - wsSystemLastPacket) < 3000
+	let strSystem = "Error"
+	if (dataFlowSystem) strSystem = `${wsSystemLatency}ms`
 	document.getElementById("system-connection").innerText = strSystem
-	document.getElementById("system-latency").innerText = strSystemLatency
-	document.getElementById("serial-connections").innerText = systemData.clients == 1 ? "1" : `${systemData.clients}[!]`
+	// Total connections to device
+	document.getElementById("serial-connections").innerText = systemData.clients == 1 ? "1" : `${systemData.clients} [!]`
+	// Ignition
 	let ignValue = document.getElementById("ignition-value")
 	ignValue.innerText = systemData.ignition ? "ON" : "OFF"
 	systemData.ignition ? ignValue.classList.add("on") : ignValue.classList.remove("on")
