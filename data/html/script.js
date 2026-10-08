@@ -409,9 +409,20 @@ const updateGamepad = () => {
 	let pad = pads[0]
 
 	let axes = pad.axes
+	let legacy = axes.length == 4
 	gamepadData.steer = axes[0]
-	gamepadData.gas = (1 + axes[4]) / 2
-	gamepadData.brake = (1 + axes[5]) / 2
+	if (!legacy) {
+		gamepadData.gas = (1 + axes[4]) / 2
+		gamepadData.brake = (1 + axes[5]) / 2
+	} else {
+		let rj = -axes[3]
+		let gas = 0
+		let brake = 0
+		if (rj > 0) gas = Math.abs(rj)
+		else brake = Math.abs(rj)
+		gamepadData.gas = gas
+		gamepadData.brake = brake
+	}
 	if (gamepadData.active) {
 		steer = Math.round(gamepadData.steer * 1000)
 		speed = Math.round((gamepadData.gas - gamepadData.brake) * 1000)
@@ -428,7 +439,21 @@ const updateGamepad = () => {
 	barSteer.style.setProperty("--left", sl)
 	barSteer.style.setProperty("--right", sr)
 
-	let abyx = [pad.buttons[0].value, pad.buttons[1].value, pad.buttons[4].value, pad.buttons[3].value]
+	let abyx = [
+		pad.buttons[0].value,
+		pad.buttons[1].value,
+		pad.buttons[4].value,
+		pad.buttons[3].value,
+	]
+	if (legacy) {
+		abyx = [
+			pad.buttons[0].value,
+			pad.buttons[1].value,
+			pad.buttons[3].value,
+			pad.buttons[2].value,
+		]
+	}
+	console.log(abyx)
 	gamepadData.a = Boolean(abyx[0])
 	gamepadData.b = Boolean(abyx[1])
 	gamepadData.x = Boolean(abyx[3])
