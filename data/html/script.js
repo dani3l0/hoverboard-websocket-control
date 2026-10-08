@@ -40,6 +40,23 @@ let controlsPaused = false
 // Sport mode
 let sportModeEnabled = false
 
+// Gamepad variables
+let gamepadDataDefault = {
+	connected: false,
+	active: false,
+	gas: 0,
+	brake: 0,
+	steer: 0,
+	a: false,
+	b: false,
+	y: false,
+	x: false,
+	lastA: false,
+	lastB: false,
+	lastY: false,
+	lastX: false,
+}
+
 
 
 ////////////////////////// Magic //////////////////////////
@@ -49,6 +66,7 @@ const copyObj = (obj) => {
 }
 let systemData = copyObj(systemDataDefaults)
 let incomingData = copyObj(incomingDataDefaults)
+let gamepadData = copyObj(gamepadDataDefault)
 
 // Motor websocket connection
 let socket
@@ -148,6 +166,7 @@ initJoystick()
 
 // Sending joystick position data
 const sendControls = () => {
+	updateGamepad()
 	if (!systemData.ignition || controlsPaused) return
 	let data = new Uint16Array([0xABCD, steer, speed])
 	let xorChecksum = data.reduce((accumulator, current) => accumulator ^ current, 0)
@@ -164,14 +183,21 @@ document.getElementById("bottom-bar").addEventListener("click", () => {
 document.getElementById("darken").addEventListener("click", () => {
 	document.body.classList.remove("debug")
 })
+
 // Ignition
 document.getElementById("ignition-value").addEventListener("click", e => {
 	let dom = e.target
 	if (dom.classList.contains("pending")) return
 	systemws.send("power")
 	dom.classList.add("pending")
-	setTimeout(() => dom.classList.remove("pending"), 3000)
+	let pad = document.getElementById("pad-btn-a")
+	pad.classList.add("pending")
+	setTimeout(() => {
+		pad.classList.remove("pending")
+		dom.classList.remove("pending")
+	}, 3000)
 })
+
 // Hz controls
 const updateControlsHz = (e) => {e.innerText = `${controlsHzPresets[currentHzPreset]} Hz`}
 document.getElementById("controls-hz").addEventListener("click", e => {
@@ -183,28 +209,38 @@ document.getElementById("controls-hz").addEventListener("click", e => {
 	updateControlsHz(dom)
 })
 updateControlsHz(document.getElementById("controls-hz"))
+
 // Pause controls
-const updatePauseControls = (e) => {
+const updatePauseControls = () => {
+	let e = document.getElementById("pause-controls")
 	let joystick = document.getElementById("joystick-handle")
+	let padBtn = document.getElementById("pad-btn-b")
 	controlsPaused ? e.classList.add("paused") : e.classList.remove("paused")
 	controlsPaused ? joystick.classList.add("paused") : joystick.classList.remove("paused")
+	controlsPaused ? padBtn.classList.add("paused") : padBtn.classList.remove("paused")
+
 }
 document.getElementById("pause-controls").addEventListener("click", e => {
 	controlsPaused = !controlsPaused
-	updatePauseControls(e.target)
+	updatePauseControls()
 })
-updatePauseControls(document.getElementById("pause-controls"))
+updatePauseControls()
+
 // SPORT controls
-const updateSportControls = (e) => {
+const updateSportControls = () => {
+	let e = document.getElementById("sport-mode")
 	let joystick = document.getElementById("joystick-handle")
+	let padBtn = document.getElementById("pad-btn-x")
 	sportModeEnabled ? e.classList.add("enabled") : e.classList.remove("enabled")
 	sportModeEnabled ? joystick.classList.add("sport") : joystick.classList.remove("sport")
+	sportModeEnabled ? padBtn.classList.add("sport") : padBtn.classList.remove("sport")
 }
 document.getElementById("sport-mode").addEventListener("click", e => {
 	sportModeEnabled = !sportModeEnabled
-	updateSportControls(e.target)
+	updateSportControls()
 })
-updatePauseControls(document.getElementById("sport-mode"))
+updateSportControls()
+
 // Toggle WiFi mode
 document.getElementById("toggle-wifi").addEventListener("click", () => {
 	const ap = "AP (WiFi hotspot)"
@@ -340,8 +376,13 @@ setInterval(() => {
 	document.getElementById("serial-connections").innerText = systemData.clients == 1 ? "1" : `${systemData.clients} [!]`
 	// Ignition
 	let ignValue = document.getElementById("ignition-value")
+	let padIgn = document.getElementById("pad-btn-a")
 	ignValue.innerText = systemData.ignition ? "ON" : "OFF"
 	systemData.ignition ? ignValue.classList.add("on") : ignValue.classList.remove("on")
+	systemData.ignition ? padIgn.classList.add("on") : padIgn.classList.remove("on")
+
+	// Gamepad
+	updateInputModes()
 }, 250)
 
 
@@ -358,3 +399,86 @@ setInterval(() => {
 	}
 	watchdogMsec += 100
 }, 100)
+
+
+// Gamepad shit
+const updateGamepad = () => {
+	if (!gamepadData.connected) return
+	let pads = navigator.getGamepads()
+	if (pads.length == 0) return
+	let pad = pads[0]
+
+	let axes = pad.axes
+	gamepadData.steer = axes[0]
+	gamepadData.gas = (1 + axes[4]) / 2
+	gamepadData.brake = (1 + axes[5]) / 2
+	if (gamepadData.active) {
+		steer = Math.round(gamepadData.steer * 1000)
+		speed = Math.round((gamepadData.gas - gamepadData.brake) * 1000)
+	}
+	let barGas = document.getElementById("pad-bar-gas")
+	let barBrake = document.getElementById("pad-bar-brake")
+	barGas.style.setProperty("--value", gamepadData.gas)
+	barBrake.style.setProperty("--value", gamepadData.brake)
+	let barSteer = document.getElementById("pad-bar-steer")
+	let sl = 0
+	let sr = 0
+	if (gamepadData.steer > 0) sr = gamepadData.steer
+	else sl = Math.abs(gamepadData.steer)
+	barSteer.style.setProperty("--left", sl)
+	barSteer.style.setProperty("--right", sr)
+
+	let abyx = [pad.buttons[0].value, pad.buttons[1].value, pad.buttons[4].value, pad.buttons[3].value]
+	gamepadData.a = Boolean(abyx[0])
+	gamepadData.b = Boolean(abyx[1])
+	gamepadData.x = Boolean(abyx[3])
+	gamepadData.y = Boolean(abyx[2])
+	let domA = document.getElementById("pad-btn-a")
+	let domB = document.getElementById("pad-btn-b")
+	let domY = document.getElementById("pad-btn-y")
+	let domX = document.getElementById("pad-btn-x")
+	gamepadData.a ? domA.classList.add("pressed") : domA.classList.remove("pressed")
+	gamepadData.b ? domB.classList.add("pressed") : domB.classList.remove("pressed")
+	gamepadData.y ? domY.classList.add("pressed") : domY.classList.remove("pressed")
+	gamepadData.x ? domX.classList.add("pressed") : domX.classList.remove("pressed")
+
+	if (gamepadData.active) {
+		if (padClick(gamepadData.a, gamepadData.lastA)) {
+			document.getElementById("ignition-value").click()
+		}
+		if (padClick(gamepadData.b, gamepadData.lastB)) {
+			document.getElementById("pause-controls").click()
+		}
+		if (padClick(gamepadData.x, gamepadData.lastX)) {
+			document.getElementById("sport-mode").click()
+		}
+	}
+	if (padClick(gamepadData.y, gamepadData.lastY)) {
+		gamepadData.active = !gamepadData.active
+	}
+
+	gamepadData.lastA = gamepadData.a
+	gamepadData.lastB = gamepadData.b
+	gamepadData.lastY = gamepadData.y
+	gamepadData.lastX = gamepadData.x
+}
+
+window.addEventListener("gamepadconnected", (e) => {
+	gamepadData.connected = true
+	gamepadData.active = true
+	document.getElementById("pad-name").innerText = "🎮 " + e.gamepad.id.split("(")[0]
+})
+window.addEventListener("gamepaddisconnected", (e) => {
+	document.getElementById("pad-name").innerText = ""
+	gamepadData = copyObj(gamepadDataDefault)
+	speed = 0
+	steer = 0
+})
+
+const updateInputModes = () => {
+	let jw = document.getElementById("joystick-wrapper")
+	gamepadData.active ? jw.classList.add("pad") : jw.classList.remove("pad")
+}
+const padClick = (curr, last) => {
+	return curr && curr != last
+}

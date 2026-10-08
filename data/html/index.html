@@ -47,9 +47,27 @@
 		</div>
 	</div>
 
-	<div class="joystick">
-		<div id="joystick-base">
-			<div id="joystick-handle"></div>
+	<div id="joystick-wrapper">
+		<div class="joystick-touch">
+			<div id="joystick-base">
+				<div id="joystick-handle"></div>
+			</div>
+		</div>
+		<div class="joystick-pad">
+			<div class="joypad-wrapper">
+				<div class="pad-bar vertical" id="pad-bar-brake"></div>
+				<div class="middle">
+					<div id="pad-name"></div>
+					<div class="legend">
+						<div id="pad-btn-a"><b>A</b><p>ON/OFF</p></div>
+						<div id="pad-btn-x"><b>X</b><p>SPORT</p></div>
+						<div id="pad-btn-b"><b>B</b><p>Pause controls</p></div>
+						<div id="pad-btn-y"><b>Y</b><p>Toggle input modes</p></div>
+					</div>
+					<div class="pad-bar horizontal" id="pad-bar-steer"></div>
+				</div>
+				<div class="pad-bar vertical" id="pad-bar-gas"></div>
+			</div>
 		</div>
 		<div id="bottom-bar">
 			<div id="ignition-status"></div>
