@@ -139,8 +139,8 @@ const initJoystick = () => {
 		const muzzle = 1 - 0.3 * Number(!sportModeEnabled)
 		uneasedSpeed *= muzzle
 		uneasedSteer *= muzzle
-		speed = Math.round(uneasedSpeed * Math.abs(uneasedSpeed) * 1000)
-		steer = Math.round(uneasedSteer * Math.abs(uneasedSteer) * 1000)
+		speed = Math.round(powerPow(uneasedSpeed) * 1000)
+		steer = Math.round(powerPow(uneasedSteer) * 1000)
 	}
 
 	const end = () => {
