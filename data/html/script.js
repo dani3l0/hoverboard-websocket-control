@@ -453,7 +453,6 @@ const updateGamepad = () => {
 			pad.buttons[2].value,
 		]
 	}
-	console.log(abyx)
 	gamepadData.a = Boolean(abyx[0])
 	gamepadData.b = Boolean(abyx[1])
 	gamepadData.x = Boolean(abyx[3])
