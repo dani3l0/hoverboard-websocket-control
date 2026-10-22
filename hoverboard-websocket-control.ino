@@ -54,7 +54,7 @@ void onSteerEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEvent
   if (type == WS_EVT_DATA) {
     AwsFrameInfo *info = (AwsFrameInfo*)arg;
     if (!info->final || info->index || info->len != len || info->opcode != WS_BINARY) return;
-    Serial2.write(data, len);
+    Serial1.write(data, len);
   }
 }
 
@@ -102,7 +102,7 @@ void setup(){
   Serial.begin(115200);
 
   // Serial port for communication with hoverboard
-  Serial2.begin(SERIAL2_BAUD_RATE, SERIAL_8N1, RX_PIN, TX_PIN);
+  Serial1.begin(SERIAL1_BAUD_RATE, SERIAL_8N1, RX_PIN, TX_PIN);
 
   // Smart-connect to Wi-Fi (or host an emergency AP)
   WiFi.onEvent(onWiFiEvent);
@@ -152,13 +152,13 @@ void loop() {
   // Check if hoverboard is still running, 2s without serial data means it's not
   hoverboardIsTurnedOn = (micros() - lastByteTime) <= 2000000;
 
-  // Cleanup Serial2 last incomplete packet, 5ms window
+  // Cleanup Serial1 last incomplete packet, 5ms window
   if (len > 0 && (micros() - lastByteTime) >= 5000) len = 0;
 
-  // Read Serial2 data and send it via websockets
-  while (Serial2.available()) {
-    if (len < bufferSize) buffer[len++] = Serial2.read();
-    else Serial2.read();
+  // Read Serial1 data and send it via websockets
+  while (Serial1.available()) {
+    if (len < bufferSize) buffer[len++] = Serial1.read();
+    else Serial1.read();
     if (len == bufferSize) {
       wsSteer.binaryAll(buffer, len);
       len = 0;

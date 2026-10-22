@@ -5,7 +5,7 @@
 #define EMERGENCY_AP_TIMEOUT  20
 #define RX_PIN                22
 #define TX_PIN                21
-#define SERIAL2_BAUD_RATE     115200
+#define SERIAL1_BAUD_RATE     115200
 #define POWER_PIN             17
 
 // Custom config overrides go here
